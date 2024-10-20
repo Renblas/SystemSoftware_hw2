@@ -77,30 +77,58 @@ static void number2ast(unsigned int val)
 %}
 
 	/* DEFINITIONS */
+
+	/* his stuff for assembly 
+	DECDIGIT	[0-9]
+	UNSIGNEDNUMBER  (((0x)[0-9A-Fa-f]+)|{DECDIGIT}+)
+	LETTER		[_a-zA-Z]
+	LETTERORDIGIT	({LETTER}|{DECDIGIT})
+	IDENT		{LETTER}({LETTERORDIGIT}*)
+	NEWLINE         \n
+	CR              \r
+	EOL             ({NEWLINE}|({CR}{NEWLINE}))
+	COMMENTSTART    %
+	COMMENT         {COMMENTSTART}.*
+	IGNORED         [ \t\v\f\r] */
+
+
+	/* my stuff for SPL */
+	IDENT				({LETTER} {LETTER_OR_DIGIT})
+	LETTER				[a-zA-Z]
+	NUMBER				(DIGIT {DIGIT})
+	DIGIT				[0-9]
+	LETTER_OR_DIGIT		({LETTER} | {DIGIT})
+	PLUS				[+]
+	MINUS				[-]
 	
-	ident				({letter} {letter_or_digit})
-	letter				[a-zA-Z]
-	number				(digit {digit})
-	digit				[0-9]
-	letter_or_digit		({letter} | {letter})
-	plus				[+]
-	minus				[-]
-	mult				[*]
-	div					[/]
-	punctuation			[.;=,] | (:=) | ( | )
-	reserved-word		const | var | proc | call | begin | end | if | then | else | while | do | read | print | divisible | by
-	rel-ops				== | != | < | <= | > | >=
-	ignored				{blank} | {tab} | {vt} | {formfeed} | {eol} | {comment}
-	blank				\32
-	tab					\9
-	vt					\11
-	formfeed			\12
-	newline				\10
-	cr					\13
-	eol					{newline} | {cr} {newline}
-	comment				{percent-siggn} {non-nl}+ {newline}
-	percent-sign		%
-	non-nl				[^\n]
+
+	/* His description of SPL Rules 
+	⟨ident⟩ ::= ⟨letter⟩ {⟨letter-or-digit⟩}
+	⟨letter⟩ ::= a | b | . . . | y | z | A | B | . . . | Y | Z
+	⟨number⟩ ::= ⟨digit⟩ {⟨digit⟩}
+	⟨digit⟩ ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+	⟨letter-or-digit⟩ ::= ⟨letter⟩ | ⟨digit⟩
+	⟨plus⟩ ::= +
+	⟨minus⟩ ::= -
+	⟨mult⟩ ::= *
+	⟨div⟩ ::= /
+	⟨punctuation⟩ ::= . | ; | = | , | := | ( | )
+	⟨reserved-word⟩ ::= const | var | proc | call | begin | end | if | then | else | while | do | read | print | divisible | by
+	⟨rel-ops⟩ ::= == | != | < | <= | > | >=
+	⟨ignored⟩ ::= ⟨blank⟩ | ⟨tab⟩ | ⟨vt⟩ | ⟨formfeed⟩ | ⟨eol⟩ | ⟨comment⟩
+	⟨blank⟩ ::= “A space character (ASCII 32)”
+	⟨tab⟩ ::= “A horizontal tab character (ASCII 9)”
+	⟨vt⟩ ::= “A vertical tab character (ASCII 11)”
+	⟨formfeed⟩ ::= “A formfeed character (ASCII 12)”
+	⟨newline⟩ ::= “A newline character (ASCII 10)”
+	⟨cr⟩ ::= “A carriage return character (ASCII 13)”
+	⟨eol⟩ ::= ⟨newline⟩ | ⟨cr⟩ ⟨newline⟩
+	⟨comment⟩ ::= ⟨percent-sign⟩ {⟨non-nl⟩} ⟨newline⟩
+	⟨percent-sign⟩ ::= %
+	⟨non-nl⟩ ::= “Any character except a newline” */
+
+
+ 
 
 %%
 
@@ -139,14 +167,13 @@ LBU             { BEGIN INSTRUCTION; tok2ast(lbuopsym); return lbuopsym; }
 
 
 
-program				{block} .
-block          		begin {const-decls} {var-decls} {proc-decls} {stmts} end
-const-decls    		{const-decl}+
-const-decl      	const {const-def-list} ;
-const-def-list    	{const-def} | {const-defs} , {const-def}
-const-def       	{ident} = {number}
-var-decls       	{var-decl}+
-var-decl            var {ident-list}
+PROGRAM         {BLOCK}
+BLOCK           {}
+CONST-DECLS     {}
+CONST-DECL      {}
+CONST-DEF-LIST  {}
+CONST-DEF       {}
+VAR-DECLS       {}
 
 /*
 ⟨program⟩ ::= ⟨block⟩ .
@@ -182,4 +209,93 @@ var-decl            var {ident-list}
 
  /* fill in the rules for your lexer below! */
 
-%%
+%%/* $Id: spl_lexer_user_code.c,v 1.4 2024/10/06 18:43:01 leavens Exp leavens $ */
+
+/* This code goes in the user code section of the spl_lexer.l file,
+  following the last %% above. */
+
+  // Requires: fname != NULL
+  // Requires: fname is the name of a readable file
+  // Initialize the lexer and start it reading
+  // from the given file name
+void lexer_init(char* fname)
+{
+	errors_noted = false;
+	yyin = fopen(fname, "r");
+	if (yyin == NULL) {
+		bail_with_error("Cannot open %s", fname);
+	}
+	input_filename = fname;
+}
+
+// Close the file yyin
+// and return 0 to indicate that there are no more files
+int yywrap() {
+	if (yyin != NULL) {
+		int rc = fclose(yyin);
+		if (rc == EOF) {
+			bail_with_error("Cannot close %s!", input_filename);
+		}
+	}
+	input_filename = NULL;
+	return 1;  /* no more input */
+}
+
+// Return the name of the current input file
+const char* lexer_filename() {
+	return input_filename;
+}
+
+// Return the line number of the next token
+unsigned int lexer_line() {
+	return yylineno;
+}
+
+/* Report an error to the user on stderr */
+void yyerror(const char* filename, const char* msg)
+{
+	fflush(stdout);
+	fprintf(stderr, "%s:%d: %s\n", input_filename, lexer_line(), msg);
+	errors_noted = true;
+}
+
+// On standard output:
+// Print a message about the file name of the lexer's input
+// and then print a heading for the lexer's output.
+void lexer_print_output_header()
+{
+	printf("Tokens from file %s\n", lexer_filename());
+	printf("%-6s %-4s  %s\n", "Number", "Line", "Text");
+}
+
+// Have any errors been noted by the lexer?
+bool lexer_has_errors()
+{
+	return errors_noted;
+}
+
+// Print information about the token t to stdout
+// followed by a newline
+void lexer_print_token(enum yytokentype t, unsigned int tline,
+			   const char* txt)
+{
+	printf("%-6d %-4d \"%s\"\n", t, tline, txt);
+}
+
+
+/* Read all the tokens from the input file
+ * and print each token on standard output
+ * using the format in lexer_print_token */
+void lexer_output()
+{
+	lexer_print_output_header();
+	AST dummy;
+	yytoken_kind_t t;
+	do {
+		t = yylex(&dummy);
+		if (t == YYEOF) {
+			break;
+		}
+		lexer_print_token(t, yylineno, yytext);
+	} while (t != YYEOF);
+}
