@@ -146,7 +146,30 @@ const-decl      	const {const-def-list} ;
 const-def-list    	{const-def} | {const-defs} , {const-def}
 const-def       	{ident} = {number}
 var-decls       	{var-decl}+
-var-decl            var {ident-list}
+var-decl            	var {ident-list}
+ident-list		{ident} | {idents} , {ident}
+proc-decls		{proc-decl}+
+proc-decl		proc {ident} {block} ;
+stmts			{empty} | {stmt-list}
+empty			
+stmt-list		{stmt} | {stmt-list} ; {stmt}
+stmt			{assign-stmt} | {call-stmt} | {if-stmt} | {while-stmt} | {read-stmt} | {print-stmt} | {block-stmt}
+assign-stmt		{ident} = {expr}
+call-stmt		call {ident}
+if-stmt			if {condition} then {stmts} else {stmts} end | if {condition} then {stmts} end
+while-stmt		while {condition} do {stmts} end
+read-stmt		read {ident}
+print-stmt		print{expr}
+block-stmt		{block}
+condition		{db-condition} | {rel-op-condition}
+db-condition		divisible {expr} by {expr}
+rel-op-condition	{expr} {rel-op} {expr}
+rel-op			== | != | < | <= | > | >=
+expr			{term} | {expr} {plus} {term} | {expr} {minus} {term}
+term			{factor} | {term} {mult} {factor} | {term} {div} {factor}
+factor			{ident} | {number} | {sign} {factor} | ( {exper} )
+sign			{minus} | {plus}
+
 
 /*
 ⟨program⟩ ::= ⟨block⟩ .
