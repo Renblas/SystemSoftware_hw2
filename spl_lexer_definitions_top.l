@@ -33,6 +33,8 @@ static bool errors_noted;
 /* The value of a token */
 extern YYSTYPE yylval;
 
+static yytoken_kind_t t;
+
 /* The FILE used by the generated lexer */
 extern FILE *yyin;
 
@@ -76,132 +78,70 @@ static void number2ast(unsigned int val)
 
 %}
 
-	/* DEFINITIONS */
-	
-	ident				({letter} {letter_or_digit})
-	letter				[a-zA-Z]
-	number				(digit {digit})
-	digit				[0-9]
-	letter_or_digit		({letter} | {letter})
-	plus				[+]
-	minus				[-]
-	mult				[*]
-	div					[/]
-	punctuation			[.;=,] | (:=) | ( | )
-	reserved-word		const | var | proc | call | begin | end | if | then | else | while | do | read | print | divisible | by
-	rel-ops				== | != | < | <= | > | >=
-	ignored				{blank} | {tab} | {vt} | {formfeed} | {eol} | {comment}
-	blank				\32
-	tab					\9
-	vt					\11
-	formfeed			\12
-	newline				\10
-	cr					\13
-	eol					{newline} | {cr} {newline}
-	comment				{percent-siggn} {non-nl}+ {newline}
-	percent-sign		%
-	non-nl				[^\n]
+/*	C Code	*/
+%{
 
+int char_num = 0;
+int line_num = 1;
+int is_comment = 0;
+
+
+/*⟨ident⟩ ::= ⟨letter⟩ {⟨letter-or-digit⟩}
+⟨letter⟩ ::= a | b | . . . | y | z | A | B | . . . | Y | Z
+⟨number⟩ ::= ⟨digit⟩ {⟨digit⟩}
+⟨digit⟩ ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+⟨letter-or-digit⟩ ::= ⟨letter⟩ | ⟨digit⟩
+⟨plus⟩ ::= +
+⟨minus⟩ ::= -
+⟨mult⟩ ::= *
+⟨div⟩ ::= /
+⟨punctuation⟩ ::= . | ; | = | , | := | ( | )
+⟨reserved-word⟩ ::= const | var | proc | call | begin | end
+| if | then | else | while | do | read | print | divisible | by
+⟨rel-ops⟩ ::= == | != | < | <= | > | >=
+⟨ignored⟩ ::= ⟨blank⟩ | ⟨tab⟩ | ⟨vt⟩ | ⟨formfeed⟩ | ⟨eol⟩ | ⟨comment⟩
+⟨blank⟩ ::= “A space character (ASCII 32)”
+⟨tab⟩ ::= “A horizontal tab character (ASCII 9)”
+⟨vt⟩ ::= “A vertical tab character (ASCII 11)”
+⟨formfeed⟩ ::= “A formfeed character (ASCII 12)”
+⟨newline⟩ ::= “A newline character (ASCII 10)”
+⟨cr⟩ ::= “A carriage return character (ASCII 13)”
+⟨eol⟩ ::= ⟨newline⟩ | ⟨cr⟩ ⟨newline⟩
+⟨comment⟩ ::= ⟨percent-sign⟩ {⟨non-nl⟩} ⟨newline⟩
+⟨percent-sign⟩ ::= %
+⟨non-nl⟩ ::= “Any character except a newline"*/
+
+%}
+
+/*	Flex Definitions	*/
+
+DIGIT 				[0-9]
+LETTER				[a-zA-Z]
+NUMBER 				{DIGIT}+
+RESERVED			const|var|proc|call|begin|end|if|then|else|while|do|read|print|divisible|by
+PUNCTUATION         ;|:=|\.|=|,|\(|\)
+EOL					\r|\n
+WHITESPACE			\t|\v|\f|\r|\40|\0
+COMMENT				%[.]*\n
+WORD				{LETTER}+
+
+/*	Flex Rules	*/
 %%
 
-/* RULES */
+{COMMENT}			{char_num += strlen(yytext);}
 
-{IGNORED}       { ; } /* do nothing */
-{COMMENT}       { ; } /* ignore comments */
-<INSTRUCTION>{EOL} { BEGIN INITIAL; return eolsym; }
-<DATADECL>{EOL} { BEGIN INITIAL; return eolsym; }
-{EOL}           { ; } /* ignore EOL outside of the above states */
+%					{char_num += strlen(yytext); is_comment = 1;}
 
-ADD             { BEGIN INSTRUCTION; tok2ast(addopsym); return addopsym; }
-SUB             { BEGIN INSTRUCTION; tok2ast(subopsym); return subopsym; }
-AND             { BEGIN INSTRUCTION; tok2ast(andopsym); return andopsym; }
-BOR             { BEGIN INSTRUCTION; tok2ast(boropsym); return boropsym; }
-NOR             { BEGIN INSTRUCTION; tok2ast(noropsym); return noropsym; }
-XOR             { BEGIN INSTRUCTION; tok2ast(xoropsym); return xoropsym; }
-MUL             { BEGIN INSTRUCTION; tok2ast(mulopsym); return mulopsym; }
-DIV             { BEGIN INSTRUCTION; tok2ast(divopsym); return divopsym; }
-SLL             { BEGIN INSTRUCTION; tok2ast(sllopsym); return sllopsym; }
-SRL             { BEGIN INSTRUCTION; tok2ast(srlopsym); return srlopsym; }
-MFHI            { BEGIN INSTRUCTION; tok2ast(mfhiopsym); return mfhiopsym; }
-MFLO            { BEGIN INSTRUCTION; tok2ast(mfloopsym); return mfloopsym; }
-JR              { BEGIN INSTRUCTION; tok2ast(jropsym); return jropsym; }
-ADDI            { BEGIN INSTRUCTION; tok2ast(addiopsym); return addiopsym; }
-ANDI            { BEGIN INSTRUCTION; tok2ast(andiopsym); return andiopsym; }
-BORI            { BEGIN INSTRUCTION; tok2ast(boriopsym); return boriopsym; }
-XORI            { BEGIN INSTRUCTION; tok2ast(xoriopsym); return xoriopsym; }
-BEQ             { BEGIN INSTRUCTION; tok2ast(beqopsym); return beqopsym; }
-BGEZ            { BEGIN INSTRUCTION; tok2ast(bgezopsym); return bgezopsym; }
-BLEZ            { BEGIN INSTRUCTION; tok2ast(blezopsym); return blezopsym; }
-BGTZ            { BEGIN INSTRUCTION; tok2ast(bgtzopsym); return bgtzopsym; }
-BLTZ            { BEGIN INSTRUCTION; tok2ast(bltzopsym); return bltzopsym; }
-BNE             { BEGIN INSTRUCTION; tok2ast(bneopsym); return bneopsym; }
-LBU             { BEGIN INSTRUCTION; tok2ast(lbuopsym); return lbuopsym; }
+{RESERVED}			{if (!is_comment) lexer_print_token(t, yylineno, yytext); char_num += strlen(yytext);}
+{WORD}    		    {if (!is_comment) lexer_print_token(t, yylineno, yytext); char_num += strlen(yytext);}
+{NUMBER}	  		{if (!is_comment) printf("%d	%d	number:		\"%s\"\n", char_num, line_num, yytext); char_num += strlen(yytext);}
+{PUNCTUATION}		{if (!is_comment) printf("%d	%d	Punctu:		\"%s\"\n", char_num, line_num, yytext); char_num += strlen(yytext);}
 
+{EOL} 				{line_num++; is_comment = 0;}
+{WHITESPACE}        {char_num += strlen(yytext);}
 
+.					{if (!is_comment) printf("hw2-errtest1.spl:%d: invalid character: '%c' ('unicode \\0%o')\n", line_num, yytext[0], yytext[0]); char_num += strlen(yytext);}
 
-program				{block} .
-block          		begin {const-decls} {var-decls} {proc-decls} {stmts} end
-const-decls    		{const-decl}+
-const-decl      	const {const-def-list} ;
-const-def-list    	{const-def} | {const-defs} , {const-def}
-const-def       	{ident} = {number}
-var-decls       	{var-decl}+
-var-decl            	var {ident-list}
-ident-list		{ident} | {idents} , {ident}
-proc-decls		{proc-decl}+
-proc-decl		proc {ident} {block} ;
-stmts			{empty} | {stmt-list}
-empty			
-stmt-list		{stmt} | {stmt-list} ; {stmt}
-stmt			{assign-stmt} | {call-stmt} | {if-stmt} | {while-stmt} | {read-stmt} | {print-stmt} | {block-stmt}
-assign-stmt		{ident} = {expr}
-call-stmt		call {ident}
-if-stmt			if {condition} then {stmts} else {stmts} end | if {condition} then {stmts} end
-while-stmt		while {condition} do {stmts} end
-read-stmt		read {ident}
-print-stmt		print{expr}
-block-stmt		{block}
-condition		{db-condition} | {rel-op-condition}
-db-condition		divisible {expr} by {expr}
-rel-op-condition	{expr} {rel-op} {expr}
-rel-op			== | != | < | <= | > | >=
-expr			{term} | {expr} {plus} {term} | {expr} {minus} {term}
-term			{factor} | {term} {mult} {factor} | {term} {div} {factor}
-factor			{ident} | {number} | {sign} {factor} | ( {exper} )
-sign			{minus} | {plus}
-
-
-/*
-⟨program⟩ ::= ⟨block⟩ .
-⟨block⟩ ::= begin ⟨const-decls⟩ ⟨var-decls⟩ ⟨proc-decls⟩ ⟨stmts⟩ end
-⟨const-decls⟩ ::= {⟨const-decl⟩}
-⟨const-decl⟩ ::= const ⟨const-def-list⟩ ;
-⟨const-def-list⟩ ::= ⟨const-def⟩ | ⟨const-defs⟩ , ⟨const-def⟩
-⟨const-def⟩ ::= ⟨ident⟩ = ⟨number⟩
-⟨var-decls⟩ ::= {⟨var-decl⟩}
-⟨var-decl⟩ ::= var ⟨ident-list⟩ ;
-⟨ident-list⟩ ::= ⟨ident⟩ | ⟨idents⟩ , ⟨ident⟩
-⟨proc-decls⟩ ::= {⟨proc-decl⟩}
-⟨proc-decl⟩ ::= proc ⟨ident⟩ ⟨block⟩ ;
-⟨stmts⟩ ::= ⟨empty⟩ | ⟨stmt-list⟩
-⟨empty⟩ ::=
-⟨stmt-list⟩ ::= ⟨stmt⟩ | ⟨stmt-list⟩ ; ⟨stmt⟩
-⟨stmt⟩ ::= ⟨assign-stmt⟩ | ⟨call-stmt⟩ | ⟨if-stmt⟩ | ⟨while-stmt⟩ | ⟨read-stmt⟩ | ⟨print-stmt⟩ | ⟨block-stmt⟩
-⟨assign-stmt⟩ ::= ⟨ident⟩ := ⟨expr⟩
-⟨call-stmt⟩ ::= call ⟨ident⟩
-⟨if-stmt⟩ ::= if ⟨condition⟩ then ⟨stmts⟩ else ⟨stmts⟩ end | if ⟨condition⟩ then ⟨stmts⟩ end
-⟨while-stmt⟩ ::= while ⟨condition⟩ do ⟨stmts⟩ end
-⟨read-stmt⟩ ::= read ⟨ident⟩
-⟨print-stmt⟩ ::= print ⟨expr⟩
-⟨block-stmt⟩ ::= ⟨block⟩
-⟨condition⟩ ::= ⟨db-condition⟩ | ⟨rel-op-condition⟩
-⟨db-condition⟩ ::= divisible ⟨expr⟩ by ⟨expr⟩
-⟨rel-op-condition⟩ ::= ⟨expr⟩ ⟨rel-op⟩ ⟨expr⟩
-⟨rel-op⟩ ::= == | != | < | <= | > | >=
-⟨expr⟩ ::= ⟨term⟩ | ⟨expr⟩ ⟨plus⟩ ⟨term⟩ | ⟨expr⟩ ⟨minus⟩ ⟨term⟩
-⟨term⟩ ::= ⟨factor⟩ | ⟨term⟩ ⟨mult⟩ ⟨factor⟩ | ⟨term⟩ ⟨div⟩ ⟨factor⟩
-⟨factor⟩ ::= ⟨ident⟩ | ⟨number⟩ | ⟨sign⟩ ⟨factor⟩ | ( ⟨expr⟩ )
-⟨sign⟩ ::= ⟨minus⟩ | ⟨plus⟩ */
 
  /* fill in the rules for your lexer below! */
 

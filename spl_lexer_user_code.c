@@ -75,11 +75,11 @@ void lexer_print_token(enum yytokentype t, unsigned int tline,
 /* Read all the tokens from the input file
  * and print each token on standard output
  * using the format in lexer_print_token */
+
 void lexer_output()
 {
 	lexer_print_output_header();
 	AST dummy;
-	yytoken_kind_t t;
 	do {
 		t = yylex(&dummy);
 		if (t == YYEOF) {

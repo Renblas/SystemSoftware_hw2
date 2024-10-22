@@ -40,7 +40,5 @@ int main(int argc, char const* argv[])
 	lexer_output();
 
 
-	//printf("hello world!\n");
-
 	return 0;
 }
