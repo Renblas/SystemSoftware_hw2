@@ -61,3 +61,17 @@ sign			{minus} | {plus} */
 WHITESPACE          [\32];
 
 {WHITESPACE}        {;}
+
+
+{WORD}    		    { char_num += strlen(yytext);}
+{NUMBER}	  		{if (!is_comment) printf("%d	%d	number:		\"%s\"\n", char_num, line_num, yytext); char_num += strlen(yytext);}
+{PUNCTUATION}		{if (!is_comment) printf("%d	%d	Punctu:		\"%s\"\n", char_num, line_num, yytext); char_num += strlen(yytext);}
+
+{EOL} 				{line_num++; is_comment = 0;}
+{WHITESPACE}        {char_num += strlen(yytext);}
+
+
+
+{COMMENT}			{char_num += strlen(yytext);}
+
+%					{char_num += strlen(yytext); is_comment = 1;}

@@ -80,6 +80,7 @@ void lexer_output()
 {
 	lexer_print_output_header();
 	AST dummy;
+	yytoken_kind_t t;
 	do {
 		t = yylex(&dummy);
 		if (t == YYEOF) {

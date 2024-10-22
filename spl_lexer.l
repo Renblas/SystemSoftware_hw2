@@ -33,8 +33,6 @@ static bool errors_noted;
 /* The value of a token */
 extern YYSTYPE yylval;
 
-static yytoken_kind_t t;
-
 /* The FILE used by the generated lexer */
 extern FILE *yyin;
 
@@ -128,19 +126,8 @@ WORD				{LETTER}+
 /*	Flex Rules	*/
 %%
 
-{COMMENT}			{char_num += strlen(yytext);}
-
-%					{char_num += strlen(yytext); is_comment = 1;}
-
-{RESERVED}			{if (!is_comment) lexer_print_token(t, yylineno, yytext); char_num += strlen(yytext);}
-{WORD}    		    {if (!is_comment) lexer_print_token(t, yylineno, yytext); char_num += strlen(yytext);}
-{NUMBER}	  		{if (!is_comment) printf("%d	%d	number:		\"%s\"\n", char_num, line_num, yytext); char_num += strlen(yytext);}
-{PUNCTUATION}		{if (!is_comment) printf("%d	%d	Punctu:		\"%s\"\n", char_num, line_num, yytext); char_num += strlen(yytext);}
-
-{EOL} 				{line_num++; is_comment = 0;}
-{WHITESPACE}        {char_num += strlen(yytext);}
-
-.					{if (!is_comment) printf("hw2-errtest1.spl:%d: invalid character: '%c' ('unicode \\0%o')\n", line_num, yytext[0], yytext[0]); char_num += strlen(yytext);}
+{RESERVED}			{ return beginsym;}
+.					{return beginsym;}
 
 
  /* fill in the rules for your lexer below! */
@@ -228,6 +215,7 @@ void lexer_output()
 {
 	lexer_print_output_header();
 	AST dummy;
+	yytoken_kind_t t;
 	do {
 		t = yylex(&dummy);
 		if (t == YYEOF) {
