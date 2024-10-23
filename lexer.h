@@ -7,13 +7,13 @@
 // Requires: fname is the name of a readable file
 // Initialize the lexer and start it reading
 // from the given file name
-extern void lexer_init(char *fname);
+extern void lexer_init(char* fname);
 
 // Return the next token in the input
 extern int yylex();
 
 // Return the name of the current file
-extern const char *lexer_filename();
+extern const char* lexer_filename();
 
 // Return the line number of the next token
 extern unsigned int lexer_line();
@@ -29,7 +29,7 @@ extern bool lexer_has_errors();
 // Print information about the token t to stdout
 // followed by a newline
 extern void lexer_print_token(int t, unsigned int tline,
-			      const char *txt);
+				  const char* txt);
 
 /* Read all the tokens from the input file
  * and print each token on standard output

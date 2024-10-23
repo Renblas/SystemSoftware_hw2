@@ -86,7 +86,7 @@ check-outputs: $(LEXER) $(ALLTESTS)
 	do \
 		echo running lexer on "$$f.spl" ...; \
 		./lexer "$$f.spl" > "$$f.myo" 2>&1; \
-		diff -w -B "$$f.out" "$$f.myo" && echo 'passed!' \
+		diff -w -B -W 150 "$$f.out" "$$f.myo" && echo 'passed!' \
 			|| { echo 'failed!'; DIFFS=1; }; \
 	done; \
 	if test 0 = $$DIFFS; \

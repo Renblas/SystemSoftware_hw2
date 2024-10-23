@@ -116,18 +116,67 @@ int is_comment = 0;
 DIGIT 				[0-9]
 LETTER				[a-zA-Z]
 NUMBER 				{DIGIT}+
-RESERVED			const|var|proc|call|begin|end|if|then|else|while|do|read|print|divisible|by
+RESERVED			(const|var|proc|call|begin|end|if|then|else|while|do|read|print|divisible|by){WHITESPACE}
 PUNCTUATION         ;|:=|\.|=|,|\(|\)
 EOL					\r|\n
 WHITESPACE			\t|\v|\f|\r|\40|\0
 COMMENT				%[.]*\n
 WORD				{LETTER}+
+IDENT               {LETTER}({LETTER}|{DIGIT})*
 
 /*	Flex Rules	*/
 %%
 
-{RESERVED}			{ return beginsym;}
-.					{return beginsym;}
+{IDENT}   			{if(is_comment) return YYUNDEF; if(0 == strcmp("end", yytext)) return endsym; return identsym;}
+{NUMBER}			{
+						if(is_comment) return YYUNDEF; 
+						if(strlen(yytext) >= 10) printf("%s:%d: Number (%s) is too large!\n", lexer_filename(), yylineno, yytext); 
+						return numbersym;
+					}
+
+%					{is_comment = 1; return YYUNDEF;}
+
+\+					{if(is_comment) return YYUNDEF; return plussym;}
+\-					{if(is_comment) return YYUNDEF; return minussym;}
+\*					{if(is_comment) return YYUNDEF; return multsym;}
+\/					{if(is_comment) return YYUNDEF; return divsym;}
+\.					{if(is_comment) return YYUNDEF; return periodsym;}
+\;					{if(is_comment) return YYUNDEF; return semisym;}
+\=					{if(is_comment) return YYUNDEF; return eqsym;}
+\,					{if(is_comment) return YYUNDEF; return commasym;}
+:=					{if(is_comment) return YYUNDEF; return becomessym;}
+\(					{if(is_comment) return YYUNDEF; return lparensym;}
+\)					{if(is_comment) return YYUNDEF; return rparensym;}
+
+const{WHITESPACE}				{if(is_comment) return YYUNDEF; return constsym;}
+var{WHITESPACE}					{if(is_comment) return YYUNDEF; return varsym;}
+proc{WHITESPACE}				{if(is_comment) return YYUNDEF; return procsym;}
+call{WHITESPACE}				{if(is_comment) return YYUNDEF; return callsym;}
+begin{WHITESPACE}				{if(is_comment) return YYUNDEF; return beginsym;}
+if{WHITESPACE}             	 	{if(is_comment) return YYUNDEF; return ifsym;}
+then{WHITESPACE}                {if(is_comment) return YYUNDEF; return thensym;}
+else{WHITESPACE}                {if(is_comment) return YYUNDEF; return elsesym;}
+while{WHITESPACE}               {if(is_comment) return YYUNDEF; return whilesym;}
+do{WHITESPACE}                  {if(is_comment) return YYUNDEF; return dosym;}
+read{WHITESPACE}                {if(is_comment) return YYUNDEF; return readsym;}
+print{WHITESPACE}               {if(is_comment) return YYUNDEF; return printsym;}
+divisible{WHITESPACE}           {if(is_comment) return YYUNDEF; return divisiblesym;}
+by{WHITESPACE}                  {if(is_comment) return YYUNDEF; return bysym;}
+
+==                  {if(is_comment) return YYUNDEF; return eqeqsym;}
+!=                  {if(is_comment) return YYUNDEF; return neqsym;}
+\<                  {if(is_comment) return YYUNDEF; return ltsym;}
+"<="                {if(is_comment) return YYUNDEF; return leqsym;}
+\>                  {if(is_comment) return YYUNDEF; return gtsym;}
+">="                {if(is_comment) return YYUNDEF; return geqsym;}
+
+{WHITESPACE}		{return YYUNDEF;}
+\n					{is_comment = 0; return YYUNDEF;}
+
+.					{
+						if (!is_comment) printf("%s:%d: invalid character: '%c' ('\\0%o')\n", lexer_filename(), yylineno, yytext[0], yytext[0]);
+						return YYUNDEF;
+					}
 
 
  /* fill in the rules for your lexer below! */
@@ -200,10 +249,12 @@ bool lexer_has_errors()
 
 // Print information about the token t to stdout
 // followed by a newline
-void lexer_print_token(enum yytokentype t, unsigned int tline,
+void lexer_print_token(int t, unsigned int tline,
 			   const char* txt)
 {
-	printf("%-6d %-4d \"%s\"\n", t, tline, txt);
+	if (t != YYUNDEF) {
+		printf("%-6d %-4d \"%s\"\n", t, tline, txt);
+	}
 }
 
 

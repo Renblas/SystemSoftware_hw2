@@ -22,9 +22,14 @@ int main(int argc, char const* argv[])
 		bail_with_error("Invalid number of arguments, %d provided\n", argc - 1);
 	}
 
+	char* fname = (char*)malloc(sizeof(char) * 4096);
+
+	strcpy(fname, argv[1]);
+
 	// Check if valid file extension
 	char* valid_extension = ".spl";
 	int len = strlen(argv[1]);
+
 	for (int i = 0; i < 4; i++)
 	{
 		if (argv[1][len - 4 + i] != valid_extension[i])
@@ -34,7 +39,7 @@ int main(int argc, char const* argv[])
 	}
 
 	// open file
-	lexer_init(argv[1]);
+	lexer_init(fname);
 
 
 	lexer_output();

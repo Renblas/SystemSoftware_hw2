@@ -122,15 +122,79 @@ EOL					\r|\n
 WHITESPACE			\t|\v|\f|\r|\40|\0
 COMMENT				%[.]*\n
 WORD				{LETTER}+
+IDENT               {LETTER}({LETTER})
 
 /*	Flex Rules	*/
 %%
+{COMMENT}           {;}
+
+begin				{ tok2ast(); return beginsym;}
+end 				{return endsym;}
 
 
-begin				{ return beginsym;}
-end 				{return endsym;}	
-+					{return plussym;}	
+
+\+					{return plussym;}
+\-					{return minussym;}
+\*					{return multsym;}
+\/					{return divsym;}
+\.					{return periodsym;}
+\;					{return semisym;}
+\=					{return eqsym;}
+\,					{return commasym;}
+:=					{return becomessym;}
+\(					{return lparensym;}
+\)					{return rparensym;}
+
+
+
+
 .					{return beginsym;}
+
+if                  {return ifsym;}
+then                {return thensym;}
+else                {return elsesym;}
+
+{IDENT}             {return identsym;}
+
+
+
+
+YYUNDEF = 257,                 /* "invalid token"  */
+    identsym = 258,                /* identsym  */
+    numbersym = 259,               /* numbersym  */
+    plussym = 260,                 /* "+"  */
+    minussym = 261,                /* "-"  */
+    multsym = 262,                 /* "*"  */
+    divsym = 263,                  /* "/"  */
+    periodsym = 264,               /* "."  */
+    semisym = 265,                 /* ";"  */
+    eqsym = 266,                   /* "="  */
+    commasym = 267,                /* ","  */
+    becomessym = 268,              /* ":="  */
+    lparensym = 269,               /* "("  */
+    rparensym = 270,               /* ")"  */
+    constsym = 271,                /* "const"  */
+    varsym = 272,                  /* "var"  */
+    procsym = 273,                 /* "proc"  */
+    callsym = 274,                 /* "call"  */
+    beginsym = 275,                /* "begin"  */
+    endsym = 276,                  /* "end"  */
+    ifsym = 277,                   /* "if"  */
+    thensym = 278,                 /* "then"  */
+    elsesym = 279,                 /* "else"  */
+    whilesym = 280,                /* "while"  */
+    dosym = 281,                   /* "do"  */
+    readsym = 282,                 /* "read"  */
+    printsym = 283,                /* "print"  */
+    divisiblesym = 284,            /* "divisible"  */
+    bysym = 285,                   /* "by"  */
+    eqeqsym = 286,                 /* "=="  */
+    neqsym = 287,                  /* "!="  */
+    ltsym = 288,                   /* "<"  */
+    leqsym = 289,                  /* "<="  */
+    gtsym = 290,                   /* ">"  */
+    geqsym = 291                   /* ">="  */
+
 
 
  /* fill in the rules for your lexer below! */

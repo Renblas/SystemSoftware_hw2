@@ -75,3 +75,22 @@ WHITESPACE          [\32];
 {COMMENT}			{char_num += strlen(yytext);}
 
 %					{char_num += strlen(yytext); is_comment = 1;}
+
+
+
+
+const				{if(is_comment) return YYUNDEF; return constsym;}
+var					{if(is_comment) return YYUNDEF; return varsym;}
+proc				{if(is_comment) return YYUNDEF; return procsym;}
+call				{if(is_comment) return YYUNDEF; return callsym;}
+begin				{if(is_comment) return YYUNDEF; return beginsym;}
+end 				{if(is_comment) return YYUNDEF; return endsym;}
+if             	 	{if(is_comment) return YYUNDEF; return ifsym;}
+then                {if(is_comment) return YYUNDEF; return thensym;}
+else                {if(is_comment) return YYUNDEF; return elsesym;}
+while               {if(is_comment) return YYUNDEF; return whilesym;}
+do                  {if(is_comment) return YYUNDEF; return dosym;}
+read                {if(is_comment) return YYUNDEF; return readsym;}
+print               {if(is_comment) return YYUNDEF; return printsym;}
+divisible           {if(is_comment) return YYUNDEF; return divisiblesym;}
+by                  {if(is_comment) return YYUNDEF; return bysym;}
